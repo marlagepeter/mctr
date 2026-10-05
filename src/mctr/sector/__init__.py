@@ -1,18 +1,22 @@
-"""Sector regime extension point."""
+"""Sector regime calculations and data contracts."""
+
+from typing import Optional, Union
 
 from dataclasses import dataclass
 
+from .models import SectorRegimeProfile, SectorRelativeStrengthProfile
+from .regime import calculate_sector_regime
+from .relative_strength import calculate_relative_strength
 
 @dataclass(frozen=True)
 class SectorRegimeInputs:
-    """Contract for sector position, momentum, trend, and relative strength."""
+	"""Backward-compatible input contract retained from Phase 1 scaffolding."""
 
-    sector_name: str
-    position: float | None = None
-    momentum: float | None = None
-    trend: float | None = None
-    relative_strength: float | None = None
-    cycle_position: float | None = None
+	sector_name: str
+	position: Optional[float] = None
+	momentum: Optional[float] = None
+	trend: Optional[float] = None
+	relative_strength: Optional[float] = None
+	cycle_position: Optional[float] = None
 
-
-# TODO: implement sector aggregation and point-in-time relative strength.
+__all__ = ["SectorRegimeInputs", "SectorRegimeProfile", "SectorRelativeStrengthProfile", "calculate_relative_strength", "calculate_sector_regime"]

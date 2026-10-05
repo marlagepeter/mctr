@@ -1,10 +1,10 @@
 """Canonical market data contracts."""
 
-from dataclasses import dataclass
 from typing import Final
 
-import pandas as pd
+from dataclasses import dataclass
 
+import pandas as pd
 
 @dataclass(frozen=True)
 class OHLCVColumns:
@@ -18,9 +18,7 @@ class OHLCVColumns:
     volume: str = "volume"
     amount: str = "amount"
 
-
 REQUIRED_OHLCV: Final[tuple[str, ...]] = ("open", "high", "low", "close", "volume")
-
 
 def validate_ohlcv(frame: pd.DataFrame, columns: OHLCVColumns = OHLCVColumns()) -> pd.DataFrame:
     """Return a validated copy with a monotonic datetime index.

@@ -1,7 +1,8 @@
 """Effective tradable chip calculations from dated holder information."""
 
+from typing import Mapping, Optional, Protocol, Sequence, Union
+
 from datetime import date
-from typing import Mapping, Protocol, Sequence
 
 import pandas as pd
 
@@ -14,16 +15,15 @@ from mctr.chips.models import (
 )
 from mctr.config import ChipConfig
 
-
-def _as_timestamp(value: date | object) -> pd.Timestamp:
+def _as_timestamp(value: Union[date, object]) -> pd.Timestamp:
     """Normalize date-like values without accepting an invalid timestamp."""
-    return pd.Timestamp(value)
 
+    return pd.Timestamp(value)
 
 def effective_free_float(
     free_float: float,
     restricted_shares: Sequence[RestrictedShare] = (),
-    as_of_date: date | object | None = None,
+    as_of_date: Optional[Union[date, object]] = None,
 ) -> float:
     """Return the supplied as-of free float without subtracting restrictions again.
 
@@ -41,10 +41,9 @@ def effective_free_float(
             _as_timestamp(record.unlock_date)
     return float(free_float)
 
-
 def _resolved_weight(
     holding: ShareholderHolding,
-    weights: Mapping[ShareholderType, float],
+    weights: Mapping[str, float],
     unknown_weight: float,
 ) -> float:
     """Resolve explicit holder weight first, then the configured type prior."""
@@ -54,15 +53,14 @@ def _resolved_weight(
         holder_type = ShareholderType(holding.shareholder_type)
     except ValueError:
         holder_type = ShareholderType.UNKNOWN
-    return weights.get(holder_type, unknown_weight)
-
+    return weights.get(holder_type.value, unknown_weight)
 
 def calculate_active_ratio(
     free_float: float,
-    holdings: Sequence[ShareholderHolding] | None = None,
-    activity_weights: Mapping[ShareholderType, float] | None = None,
+    holdings: Optional[Sequence[ShareholderHolding]] = None,
+    activity_weights: Optional[Mapping[str, float]] = None,
     config: ChipConfig = ChipConfig(),
-    as_of_date: date | object | None = None,
+    as_of_date: Optional[Union[date, object]] = None,
 ) -> ActiveRatioResult:
     """Calculate active shares divided by free float.
 
@@ -110,13 +108,12 @@ def calculate_active_ratio(
         covered_shares=covered_shares,
     )
 
-
 def calculate_effective_tradable_chips(
     free_float: float,
-    holdings: Sequence[ShareholderHolding] | None = None,
-    activity_weights: Mapping[ShareholderType, float] | None = None,
+    holdings: Optional[Sequence[ShareholderHolding]] = None,
+    activity_weights: Optional[Mapping[str, float]] = None,
     config: ChipConfig = ChipConfig(),
-    as_of_date: date | object | None = None,
+    as_of_date: Optional[Union[date, object]] = None,
 ) -> EffectiveTradableChipsResult:
     """Return ``ETC = free_float * active_ratio`` with audit metadata."""
     active = calculate_active_ratio(
@@ -129,7 +126,6 @@ def calculate_effective_tradable_chips(
         confidence=active.confidence,
         fallback_used=active.fallback_used,
     )
-
 
 class ActivityCalibrator(Protocol):
     """Future interface for fitting activity priors from historical observations."""

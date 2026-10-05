@@ -1,21 +1,29 @@
-"""Market regime extension point."""
+"""Market regime calculations and data contracts."""
+
+from typing import Optional, Union
 
 from dataclasses import dataclass
 
+from .breadth import breadth_profile, calculate_market_breadth
+from .models import MarketBreadthProfile, MarketIndexProfile, MarketRegimeProfile, MarketVolumeProfile
+from .regime import calculate_market_regime, calculate_market_volume
 
 @dataclass(frozen=True)
 class MarketRegimeInputs:
-    """Contract for index, breadth, liquidity, and market indicator inputs."""
+    """Backward-compatible input contract retained from Phase 1 scaffolding."""
 
     index_name: str
-    breadth: float | None = None
-    new_highs: int | None = None
-    new_lows: int | None = None
-    above_ma_20: float | None = None
-    above_ma_60: float | None = None
-    above_ma_120: float | None = None
-    above_ma_250: float | None = None
-    turnover: float | None = None
+    breadth: Optional[float] = None
+    new_highs: Optional[int] = None
+    new_lows: Optional[int] = None
+    above_ma_20: Optional[float] = None
+    above_ma_60: Optional[float] = None
+    above_ma_120: Optional[float] = None
+    above_ma_250: Optional[float] = None
+    turnover: Optional[float] = None
 
-
-# TODO: implement independent regime calculations for required A-share indices.
+__all__ = [
+    "MarketBreadthProfile", "MarketIndexProfile", "MarketRegimeInputs", "MarketRegimeProfile",
+    "MarketVolumeProfile", "breadth_profile", "calculate_market_breadth",
+    "calculate_market_regime", "calculate_market_volume",
+]

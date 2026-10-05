@@ -1,7 +1,8 @@
 """Point-in-time ChipProfile assembly and historical chip comparisons."""
 
+from typing import Optional, Sequence, Union
+
 from datetime import date
-from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -18,9 +19,9 @@ from mctr.chips.density import (
 from mctr.chips.models import ChipProfile, RestrictedShare, ShareholderHolding
 from mctr.config import ChipConfig
 
-
-def _through(history: pd.DataFrame, as_of_date: date | object | None) -> pd.DataFrame:
+def _through(history: pd.DataFrame, as_of_date: Optional[Union[date, object]]) -> pd.DataFrame:
     """Return a sorted copy containing observations known at the cutoff."""
+
     from mctr.models.market_data import validate_ohlcv
 
     result = validate_ohlcv(history)
@@ -28,11 +29,10 @@ def _through(history: pd.DataFrame, as_of_date: date | object | None) -> pd.Data
         result = result.loc[result.index <= pd.Timestamp(as_of_date)]
     return result
 
-
 def _daily_densities(
     history: pd.DataFrame,
     free_float: float,
-    holdings: Sequence[ShareholderHolding] | None,
+    holdings: Optional[Sequence[ShareholderHolding]],
     config: ChipConfig,
 ) -> tuple[list[pd.Timestamp], list[pd.Series]]:
     """Build each daily density using only records through that date."""
@@ -50,20 +50,18 @@ def _daily_densities(
         densities.append(build_chip_density(history.loc[:current_date], etc))
     return dates, densities
 
-
-def _historical_peak(peaks: list[float | None], current_index: int, window: int) -> float | None:
+def _historical_peak(peaks: list[Optional[float]], current_index: int, window: int) -> Optional[float]:
     """Return the peak from exactly ``window`` prior observations."""
     position = current_index - window
     return peaks[position] if position >= 0 else None
 
-
 def build_chip_profile(
     history: pd.DataFrame,
     free_float: float,
-    holdings: Sequence[ShareholderHolding] | None = None,
+    holdings: Optional[Sequence[ShareholderHolding]] = None,
     restricted_shares: Sequence[RestrictedShare] = (),
     config: ChipConfig = ChipConfig(),
-    as_of_date: date | object | None = None,
+    as_of_date: Optional[Union[date, object]] = None,
 ) -> ChipProfile:
     """Build raw chip features strictly through ``as_of_date``.
 
@@ -91,7 +89,7 @@ def build_chip_profile(
     peaks = [find_main_chip_peak(density) for density in densities]
     peak_prices = [item.peak_price if item else None for item in peaks]
 
-    def migration(window: int) -> tuple[float | None, float | None]:
+    def migration(window: int) -> tuple[Optional[float], Optional[float]]:
         prior = _historical_peak(peak_prices, current_index, window)
         if peak is None or prior is None:
             return None, None
@@ -100,7 +98,7 @@ def build_chip_profile(
 
     migrations = {window: migration(window) for window in config.migration_windows}
 
-    def divergence(window: int) -> float | None:
+    def divergence(window: int) -> Optional[float]:
         if current_index < window:
             return None
         prior_peak = peak_prices[current_index - window]

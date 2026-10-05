@@ -25,7 +25,19 @@ Multi-Cycle Trend & Chip Resonance，多周期趋势筹码共振择时模型。
 
 ## 未完成项目
 
-筹码密度迁移、Market Regime、Sector Regime、非线性 Resonance、Bottom/Top 概率引擎、Risk Override 计算、目标区校准及 point-in-time 回测引擎均标记为 TODO，尚未假装实现。
+Bottom/Top 概率引擎、Risk Override 计算、目标区校准及 point-in-time 回测引擎均标记为 TODO，尚未假装实现。
+
+## 第三阶段状态
+
+已实现 Market Regime、Market Breadth、Market Volume、Sector Regime、Relative Strength、Stock Regime Integration 和三层 Resonance。公式、门控、最弱环节约束及当前 Model Prior 说明见 [docs/phase-three.md](docs/phase-three.md)。Bottom/Top、Risk、回测和交易功能仍未实现。
+
+## 第四阶段状态
+
+已实现 Bottom Engine 的 Position、Chip、Exhaustion、Momentum Reversal、Trend Transition、Structural Score、Confirmation、Contradiction、Risk Override、Bottom Probability、L1-L4 和 Risk/Reward 原始计算。公式与边界见 [docs/phase-four.md](docs/phase-four.md)。当前没有 Top Engine、正式交易策略或历史校准。
+
+## 第四阶段半验证状态
+
+已实现 DataFrame 输入的历史信号验证、未来收益、MFE/MAE、L1-L4/Probability/Resonance 分组统计和案例分析接口。当前不接入真实历史数据；缺失数据会明确标记，不反向修改 Phase 1-4。详见 [docs/phase-four-five.md](docs/phase-four-five.md)。
 
 ## 开发
 

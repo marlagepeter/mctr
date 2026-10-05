@@ -1,9 +1,9 @@
 """State and score data structures shared by later engines."""
 
+from typing import Literal, Optional, Union
+
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Literal
-
 
 class TrendState(IntEnum):
     T0_MAIN_DECLINE = 0
@@ -14,13 +14,11 @@ class TrendState(IntEnum):
     T5_RALLY_EXHAUSTION = 5
     T6_TREND_BROKEN = 6
 
-
 class PositionLevel(IntEnum):
     L1_PRICE_LOW = 1
     L2_STRUCTURE_LOW = 2
     L3_CYCLE_BOTTOM_CANDIDATE = 3
     L4_STRATEGIC_BOTTOM = 4
-
 
 @dataclass(frozen=True)
 class BottomFeatures:
@@ -32,8 +30,7 @@ class BottomFeatures:
     momentum: float
     trend: float
     resonance: float
-    probability: float | None = None
-
+    probability: Optional[float] = None
 
 @dataclass(frozen=True)
 class TopFeatures:
@@ -50,8 +47,7 @@ class TopFeatures:
     trend_exhaustion: float
     market_top: float
     sector_top: float
-    probability: float | None = None
-
+    probability: Optional[float] = None
 
 @dataclass(frozen=True)
 class RiskOverride:

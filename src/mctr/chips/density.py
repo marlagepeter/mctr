@@ -1,15 +1,15 @@
 """Point-in-time chip density and price-level feature calculations."""
 
+from typing import Mapping, Optional, Union
+
 from dataclasses import dataclass
 from datetime import date
-from typing import Mapping
 
 import numpy as np
 import pandas as pd
 
 from mctr.chips.models import EffectiveTradableChipsResult
 from mctr.models.market_data import validate_ohlcv
-
 
 @dataclass(frozen=True)
 class MainChipPeak:
@@ -18,7 +18,6 @@ class MainChipPeak:
     peak_price: float
     peak_density: float
     peak_index: int
-
 
 @dataclass(frozen=True)
 class CoreChipRange:
@@ -29,18 +28,16 @@ class CoreChipRange:
     coverage: float
     concentration: float
 
-
 @dataclass(frozen=True)
 class SupportResistance:
     """Density and weighted price levels around the current price."""
 
-    immediate_support: float | None
+    immediate_support: Optional[float]
     support_density: float
-    weighted_support: float | None
-    immediate_resistance: float | None
+    weighted_support: Optional[float]
+    immediate_resistance: Optional[float]
     resistance_density: float
-    weighted_resistance: float | None
-
+    weighted_resistance: Optional[float]
 
 def estimate_price_center(row: pd.Series) -> float:
     """Estimate traded price as ``(high + low + 2 * close) / 4`` from OHLCV.
@@ -52,7 +49,6 @@ def estimate_price_center(row: pd.Series) -> float:
         raise ValueError("OHLC prices must satisfy low <= close <= high")
     return (high + low + 2.0 * close) / 4.0
 
-
 def calculate_effective_turnover(volume: float, free_float: float) -> float:
     """Calculate clipped market turnover ``volume / FreeFloat`` in [0, 1]."""
     if volume < 0.0:
@@ -61,20 +57,18 @@ def calculate_effective_turnover(volume: float, free_float: float) -> float:
         raise ValueError("free_float must be positive")
     return min(max(volume / free_float, 0.0), 1.0)
 
-
-def _history_through(history: pd.DataFrame, as_of_date: date | object | None) -> pd.DataFrame:
+def _history_through(history: pd.DataFrame, as_of_date: Optional[Union[date, object]]) -> pd.DataFrame:
     """Validate and truncate history to the point-in-time cutoff."""
     result = validate_ohlcv(history)
     if as_of_date is not None:
         result = result.loc[result.index <= pd.Timestamp(as_of_date)]
     return result
 
-
 def build_chip_density(
     history: pd.DataFrame,
     etc: EffectiveTradableChipsResult,
-    as_of_date: date | object | None = None,
-    etc_by_date: Mapping[pd.Timestamp, EffectiveTradableChipsResult] | None = None,
+    as_of_date: Optional[Union[date, object]] = None,
+    etc_by_date: Optional[Mapping[pd.Timestamp, EffectiveTradableChipsResult]] = None,
 ) -> pd.Series:
     """Build shares-at-price density by causal daily migration.
 
@@ -100,7 +94,6 @@ def build_chip_density(
                 density[price] *= scale_factor
     return pd.Series(density, dtype=float).sort_index()
 
-
 def normalized_density(density: pd.Series) -> pd.Series:
     """Normalize shares density to sum to one, preserving an empty result."""
     total = float(density.sum())
@@ -108,16 +101,14 @@ def normalized_density(density: pd.Series) -> pd.Series:
         return pd.Series(dtype=float, index=density.index, name="normalized_density")
     return (density / total).rename("normalized_density")
 
-
-def find_main_chip_peak(density: pd.Series) -> MainChipPeak | None:
+def find_main_chip_peak(density: pd.Series) -> Optional[MainChipPeak]:
     """Select the price index with maximum raw chip density."""
     if density.empty:
         return None
     position = int(np.argmax(density.to_numpy()))
     return MainChipPeak(float(density.index[position]), float(density.iloc[position]), position)
 
-
-def find_core_chip_range(density: pd.Series, target_coverage: float = 0.70) -> CoreChipRange | None:
+def find_core_chip_range(density: pd.Series, target_coverage: float = 0.70) -> Optional[CoreChipRange]:
     """Find the narrowest sorted-price interval covering the target mass.
 
     The algorithm uses a two-pointer window over price levels and the normalized
@@ -129,7 +120,7 @@ def find_core_chip_range(density: pd.Series, target_coverage: float = 0.70) -> C
         return None
     prices = density.sort_index().index.to_numpy(dtype=float)
     masses = normalized_density(density.sort_index()).to_numpy()
-    best: tuple[float, int, int, float] | None = None
+    best: Optional[tuple[float, int, int, float]] = None
     right = 0
     mass = 0.0
     for left in range(len(prices)):
@@ -146,10 +137,9 @@ def find_core_chip_range(density: pd.Series, target_coverage: float = 0.70) -> C
     _, left, right, coverage = best
     return CoreChipRange(float(prices[left]), float(prices[right]), float(coverage), float(coverage))
 
-
 def calculate_chip_concentration(
     density: pd.Series,
-    core_range: CoreChipRange | None,
+    core_range: Optional[CoreChipRange],
 ) -> dict[str, float]:
     """Return core width as price percentage and core density share."""
     if core_range is None or density.empty:
@@ -158,7 +148,6 @@ def calculate_chip_concentration(
     midpoint = (core_range.lower_price + core_range.upper_price) / 2.0
     width_pct = (core_range.upper_price - core_range.lower_price) / midpoint if midpoint else np.nan
     return {"core_range_width_pct": float(width_pct), "core_density_share": core_share}
-
 
 def calculate_support_resistance(
     density: pd.Series,
@@ -177,7 +166,7 @@ def calculate_support_resistance(
     below = normalized[(normalized.index < current_price) & (normalized.index >= lower)]
     above = normalized[(normalized.index > current_price) & (normalized.index <= upper)]
 
-    def weighted(values: pd.Series) -> float | None:
+    def weighted(values: pd.Series) -> Optional[float]:
         return float((values.index.to_numpy(dtype=float) * values.to_numpy()).sum() / values.sum()) if not values.empty else None
 
     return SupportResistance(

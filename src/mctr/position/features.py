@@ -1,5 +1,8 @@
 """Historical price-position features."""
 
+from collections.abc import Sequence
+from typing import Optional, Union
+
 import pandas as pd
 
 
@@ -30,3 +33,29 @@ def position_features(close: pd.Series, windows: tuple[int, ...] = (60, 120, 250
     result = pd.concat([rolling_price_position(close, window) for window in windows], axis=1)
     result["price_percentile"] = price_percentile(close, max(windows))
     return result
+
+
+def calculate_position_percentiles(
+    close: Union[pd.Series, pd.DataFrame],
+    windows: Optional[Sequence[int]] = None,
+    config: Optional[object] = None,
+) -> dict[int, float]:
+    """Return the latest rolling position percentile for each requested window."""
+    if isinstance(close, pd.DataFrame):
+        if "close" not in close.columns:
+            raise ValueError("close frame must contain a 'close' column")
+        close = close["close"]
+    if windows is None:
+        windows = getattr(config, "position_windows", (60, 120, 250, 500))
+    windows = tuple(int(window) for window in windows)
+    if not windows:
+        raise ValueError("windows must not be empty")
+    features = position_features(close, windows)
+    percentiles: dict[int, float] = {}
+    for window in windows:
+        column = features.get(f"position_{window}")
+        value = 0.5
+        if column is not None and not column.empty:
+            value = float(column.iloc[-1])
+        percentiles[window] = max(0.0, min(1.0, value))
+    return percentiles

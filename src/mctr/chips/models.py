@@ -1,12 +1,18 @@
 """Data contracts for effective tradable chips and chip density."""
 
+from typing import Optional, Protocol, Union
+
 from dataclasses import dataclass
 from datetime import date
-from enum import StrEnum
-from typing import Protocol
+try:
+    from enum import StrEnum
+except ImportError:
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        pass
 
 import pandas as pd
-
 
 class ShareholderType(StrEnum):
     """Configurable holder categories used to resolve activity priors."""
@@ -22,7 +28,6 @@ class ShareholderType(StrEnum):
     STRATEGIC = "strategic"
     UNKNOWN = "unknown"
 
-
 @dataclass(frozen=True)
 class HolderActivity:
     """Configurable activity weight for a holder category."""
@@ -33,7 +38,6 @@ class HolderActivity:
     def __post_init__(self) -> None:
         if not 0.0 <= self.active_ratio <= 1.0:
             raise ValueError("active_ratio must be between 0 and 1")
-
 
 @dataclass(frozen=True)
 class ShareholderHolding:
@@ -47,8 +51,8 @@ class ShareholderHolding:
     is_controller_related: bool = False
     is_executive_related: bool = False
     is_strategic: bool = False
-    activity_weight: float | None = None
-    effective_date: pd.Timestamp | date | None = None
+    activity_weight: Optional[float] = None
+    effective_date: Optional[Union[pd.Timestamp, date]] = None
 
     def __post_init__(self) -> None:
         if self.shares < 0.0:
@@ -65,20 +69,18 @@ class ShareholderHolding:
             raise ValueError("activity_weight must be resolved before reading effective_shares")
         return self.shares * self.activity_weight
 
-
 @dataclass(frozen=True)
 class RestrictedShare:
     """A dated restriction record; it is never subtracted from free float again."""
 
     shares: float
-    unlock_date: pd.Timestamp | date
+    unlock_date: Union[pd.Timestamp, date]
     holder_type: ShareholderType = ShareholderType.UNKNOWN
-    source_date: pd.Timestamp | date | None = None
+    source_date: Optional[Union[pd.Timestamp, date]] = None
 
     def __post_init__(self) -> None:
         if self.shares < 0.0:
             raise ValueError("shares must be non-negative")
-
 
 @dataclass(frozen=True)
 class ActiveRatioResult:
@@ -88,7 +90,6 @@ class ActiveRatioResult:
     confidence: str
     fallback_used: bool
     covered_shares: float
-
 
 @dataclass(frozen=True)
 class EffectiveTradableChips:
@@ -102,7 +103,6 @@ class EffectiveTradableChips:
         """Effective tradable chips."""
         return self.free_float * self.active_ratio
 
-
 @dataclass(frozen=True)
 class EffectiveTradableChipsResult:
     """Complete ETC output required by the research layer."""
@@ -112,7 +112,6 @@ class EffectiveTradableChipsResult:
     effective_tradable_chips: float
     confidence: str
     fallback_used: bool
-
 
 @dataclass(frozen=True)
 class ChipProfile:
@@ -124,39 +123,37 @@ class ChipProfile:
     effective_tradable_chips: float
     confidence: str
     fallback_used: bool
-    peak_price: float | None
-    peak_density: float | None
-    core_lower: float | None
-    core_upper: float | None
-    core_coverage: float | None
-    concentration: float | None
-    support_density: float | None
-    resistance_density: float | None
-    migration_5d: float | None
-    migration_20d: float | None
-    migration_60d: float | None
-    migration_velocity_5d: float | None
-    migration_velocity_20d: float | None
-    migration_velocity_60d: float | None
-    divergence_20d: float | None
-    divergence_60d: float | None
+    peak_price: Optional[float]
+    peak_density: Optional[float]
+    core_lower: Optional[float]
+    core_upper: Optional[float]
+    core_coverage: Optional[float]
+    concentration: Optional[float]
+    support_density: Optional[float]
+    resistance_density: Optional[float]
+    migration_5d: Optional[float]
+    migration_20d: Optional[float]
+    migration_60d: Optional[float]
+    migration_velocity_5d: Optional[float]
+    migration_velocity_20d: Optional[float]
+    migration_velocity_60d: Optional[float]
+    divergence_20d: Optional[float]
+    divergence_60d: Optional[float]
     density: pd.Series
     normalized_density: pd.Series
-
 
 @dataclass(frozen=True)
 class ChipSnapshot:
     """Future daily chip density output contract."""
 
     density: pd.Series
-    main_peak: float | None = None
-    core_range: tuple[float, float] | None = None
-    concentration: float | None = None
-    support: float | None = None
-    resistance: float | None = None
-    migration: float | None = None
-    price_divergence: float | None = None
-
+    main_peak: Optional[float] = None
+    core_range: Optional[tuple[float, float]] = None
+    concentration: Optional[float] = None
+    support: Optional[float] = None
+    resistance: Optional[float] = None
+    migration: Optional[float] = None
+    price_divergence: Optional[float] = None
 
 class ChipDensityEngine(Protocol):
     """Protocol for a point-in-time chip density implementation."""
